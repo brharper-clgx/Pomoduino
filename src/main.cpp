@@ -6,8 +6,8 @@
  */
 const long SECONDS = 1000;
 const long MINUTES = 60 * SECONDS;
-const long pomodoroDuration = 2 * MINUTES;
-const long warningDuration = pomodoroDuration - 1 * MINUTES;
+const long pomodoroDuration = 25 * MINUTES;
+const long warningDuration = pomodoroDuration - 5 * MINUTES;
 
 const int redLED = A0;
 const int blueLED = A1;
@@ -18,7 +18,7 @@ const int buzzer = 9;
 
 
 /**
- * LOCALS: 
+ * Local Variables: 
  */
 volatile long startTime = -1;
 volatile bool runEndSequence = false;
@@ -26,20 +26,6 @@ volatile bool fiveMinuteMark = false;
 
 LedService ledService(redLED, greenLED, blueLED);
 
-/**
- * INTERUPTS
- */
-void onStart()
-{
-  startTime = millis();
-  ledService.SetColor(Color::Red);
-}
-
-void onCancel()
-{
-  runEndSequence = true;
-  startTime = -1;
-}
 
 /**
  * Local methods
@@ -100,7 +86,22 @@ void endSequence()
 }
 
 /**
- * MAIN
+ * INTERUPTS
+ */
+void onStart()
+{
+  startTime = millis();
+  ledService.SetColor(Color::Red);
+}
+
+void onCancel()
+{
+  runEndSequence = true;
+  startTime = -1;
+}
+
+/**
+ * MAIN LOOP
   */
 void setup()
 {
