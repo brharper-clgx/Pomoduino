@@ -2,12 +2,12 @@
 #include "LedService.h"
 
 /**
- * GLOBAL: 
+ * CONSTANTS: 
  */
 const long SECONDS = 1000;
 const long MINUTES = 60 * SECONDS;
 const long pomodoroDuration = 2 * MINUTES;
-const long warningDuration = 1 * MINUTES;
+const long warningDuration = pomodoroDuration - 1 * MINUTES;
 
 const int redLED = A0;
 const int blueLED = A1;
@@ -16,9 +16,13 @@ const int startButton = 2;
 const int cancelButton = 3;
 const int buzzer = 9;
 
-volatile long pomodoroStart = -1;
-volatile bool pomodoroIsRunning = false;
-bool callBuzzer = false;
+
+/**
+ * LOCALS: 
+ */
+volatile long startTime = -1;
+volatile bool runEndSequence = false;
+volatile bool fiveMinuteMark = false;
 
 LedService ledService(redLED, greenLED, blueLED);
 
@@ -27,35 +31,58 @@ LedService ledService(redLED, greenLED, blueLED);
  */
 void onStart()
 {
-  pomodoroIsRunning = true;
-  pomodoroStart = millis();
+  startTime = millis();
   ledService.SetColor(Color::Red);
-  callBuzzer = true;
 }
 
 void onCancel()
 {
-  pomodoroIsRunning = false;
-  ledService.SetColor(Color::Blue);
+  runEndSequence = true;
+  startTime = -1;
 }
 
 /**
  * Local methods
   */
-bool pomodoroIsOver()
+bool timerHasExpired()
 {
-  return !pomodoroIsRunning || (millis() - pomodoroStart) >= pomodoroDuration;
+  if(startTime >= 0)
+  {
+    return (millis() - startTime) >= pomodoroDuration;
+  }
+  else
+  {
+    return false;
+  }
 }
 
-bool fiveMinutesLeft()
+bool pastFiveMinuteMark()
 {
-  return (millis() - pomodoroStart) >= (pomodoroDuration - warningDuration);
+  if(startTime >= 0)
+  {
+    return (millis() - startTime) >= warningDuration;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+void updateState()
+{
+  if( timerHasExpired() )
+  {
+    runEndSequence = true;
+    startTime = -1;
+  }
+  else if( pastFiveMinuteMark() )
+  {
+    fiveMinuteMark = true;
+  }
 }
 
 void playSong()
 {
-  if (callBuzzer && pomodoroIsOver())
-  {
     tone(buzzer, 1047); // Send 1KHz sound signal...
     delay(400);
     tone(buzzer, 1175);
@@ -63,8 +90,13 @@ void playSong()
     tone(buzzer, 785);
     delay(400);
     noTone(buzzer);
-    callBuzzer = false;
-  }
+}
+
+void endSequence()
+{
+  ledService.SetColor(Color::Blue);
+  playSong();
+  runEndSequence = false;
 }
 
 /**
@@ -84,13 +116,14 @@ void setup()
 
 void loop()
 {
-  if (pomodoroIsOver())
+  updateState();
+  if(runEndSequence)
   {
-    ledService.SetColor(Color::Blue);
-    playSong();
+    endSequence();
   }
-  else if (fiveMinutesLeft())
+  else if(fiveMinuteMark)
   {
     ledService.SetColor(Color::Yellow);
+    fiveMinuteMark = false;
   }
 }
