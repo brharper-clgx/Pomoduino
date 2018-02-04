@@ -69,7 +69,7 @@ void updateState()
 
 void playSong()
 {
-    tone(buzzer, 1047); // Send 1KHz sound signal...
+    tone(buzzer, 1047);
     delay(400);
     tone(buzzer, 1175);
     delay(200);
